@@ -1,16 +1,21 @@
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
-import TestSocketConnection from './components/TestSocketConnection'
-import { SocketProvider } from './contexts/SocketContext'
+import DashboardPage from './pages/DashboardPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
 
   return (
-    <SocketProvider>
-      <div>
-        <h1>Hello World!</h1>
-        <TestSocketConnection />
-      </div>
-    </SocketProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
