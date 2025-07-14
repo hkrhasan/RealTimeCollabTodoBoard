@@ -5,9 +5,12 @@ import { Server } from 'socket.io';
 import config from "./config";
 import { registerRoutes } from "./routes";
 import { connectDB } from "./db";
+import { httpContextMiddleware } from "./middlewares/http-context.middleware";
+import { authenticateSocket } from "./middlewares/auth.middleware";
 
 const app = express();
 app.use(cors()); // Enables CORS for all routes and origins
+app.use(httpContextMiddleware);
 app.use(express.json());
 registerRoutes(app);
 
@@ -25,6 +28,8 @@ async function start() {
       credentials: true,
     },
   });
+
+  io.use(authenticateSocket())
 
   io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
