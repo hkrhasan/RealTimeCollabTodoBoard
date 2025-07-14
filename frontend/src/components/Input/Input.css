@@ -1,0 +1,21 @@
+
+.input-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.input-error {
+  border-color: #dc5d26; 
+}
+
+.input-error:focus {
+  border-color: #dc5d26;
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.25);
+}
+
+.input-error-text {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #dc5d26;
+}

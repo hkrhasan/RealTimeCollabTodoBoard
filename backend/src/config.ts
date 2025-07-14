@@ -13,8 +13,6 @@ const config = {
 };
 
 
-
-
 if (!config.mongoUri) throw new Error('MONGODB_URI missing in .env');
 if (!config.JWTSecret) throw new Error('JWT_SECRET missing in .env')
 
