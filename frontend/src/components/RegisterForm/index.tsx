@@ -2,10 +2,13 @@ import type { FC } from 'react';
 import { useFormik } from 'formik';
 import { z } from 'zod';
 import { Input } from '../Input';
+import type { LoginValues } from '../LoginForm';
+import useAuth from '../../hooks/useAuth';
 
 export interface RegisterFormProps {
   className?: string;
   onLoginClick: () => void;
+  postRegister?: (payload: LoginValues) => void;
 }
 
 const registerSchema = z
@@ -19,9 +22,10 @@ const registerSchema = z
     path: ['confirmPassword'],
   });
 
-type RegisterValues = z.infer<typeof registerSchema>;
+export type RegisterValues = z.infer<typeof registerSchema>;
 
-export const RegisterForm: FC<RegisterFormProps> = ({ className = '', onLoginClick }) => {
+export const RegisterForm: FC<RegisterFormProps> = ({ className = '', onLoginClick, postRegister }) => {
+  const authState = useAuth()
   const formik = useFormik<RegisterValues>({
     initialValues: {
       email: '',
@@ -44,9 +48,13 @@ export const RegisterForm: FC<RegisterFormProps> = ({ className = '', onLoginCli
         return fieldErrors;
       }
     },
-    onSubmit: (values, { setSubmitting }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       setSubmitting(true);
-      console.log('Registering with:', values);
+      await authState.register(values)
+      if (postRegister) {
+        postRegister({ email: values.email, password: values.password })
+      }
+      onLoginClick();
       setSubmitting(false);
     },
   });
@@ -96,9 +104,9 @@ export const RegisterForm: FC<RegisterFormProps> = ({ className = '', onLoginCli
         />
       </div>
 
-      <div className="auth-actions flex flex-col row-gap-4">
-        <button type="submit" className="button" disabled={formik.isSubmitting}>
-          {formik.isSubmitting ? 'Registering...' : 'Register'}
+      <div className="auth-actions">
+        <button type="submit" className="button" disabled={formik.isSubmitting || authState.isLoading}>
+          {(formik.isSubmitting || authState.isLoading) ? 'Registering...' : 'Register'}
         </button>
         <p>
           Already have an account?{' '}

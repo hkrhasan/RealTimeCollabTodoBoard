@@ -15,19 +15,26 @@
   place-content: center;
 }
 
+.auth-form,
+.auth-header,
+.auth-fields,
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+}
+
 .auth-form {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1rem;
   min-width: 400px;
+  row-gap: var(--spacing-md);
+}
+.auth-fields,
+.auth-header {
+  row-gap: var(--spacing-sm);
 }
 
-.auth-fields {
-  display: flex;
-  flex-direction: column;
-  row-gap: .4rem;  
+.auth-actions {
+  row-gap: var(--spacing-md);
 }
-
 
 
 @media (max-width: 768px) {

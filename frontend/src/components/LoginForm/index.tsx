@@ -2,10 +2,12 @@ import type { FC } from 'react';
 import { useFormik } from 'formik';
 import { z } from 'zod';
 import { Input } from '../Input';
+import useAuth from '../../hooks/useAuth';
 
 export interface LoginFormProps {
   className?: string;
   onRegisterClick?: () => void;
+  credentials?: LoginValues
 }
 
 const loginSchema = z.object({
@@ -13,13 +15,14 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters long'),
 });
 
-type LoginValues = z.infer<typeof loginSchema>;
+export type LoginValues = z.infer<typeof loginSchema>;
 
-export const LoginForm: FC<LoginFormProps> = ({ className = '', onRegisterClick }) => {
+export const LoginForm: FC<LoginFormProps> = ({ className = '', onRegisterClick, credentials }) => {
+  const authState = useAuth()
   const formik = useFormik<LoginValues>({
     initialValues: {
-      email: '',
-      password: '',
+      email: credentials?.email || '',
+      password: credentials?.password || '',
     },
     validate: (values) => {
       try {
@@ -37,9 +40,9 @@ export const LoginForm: FC<LoginFormProps> = ({ className = '', onRegisterClick 
         return fieldErrors;
       }
     },
-    onSubmit: (values, { setSubmitting }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       setSubmitting(true);
-      console.log('Logging in with:', values);
+      await authState.login(values);
       setSubmitting(false);
     },
   });
@@ -82,7 +85,7 @@ export const LoginForm: FC<LoginFormProps> = ({ className = '', onRegisterClick 
 
       </div>
 
-      <div className="auth-actions flex flex-col row-gap-4">
+      <div className="auth-actions">
         <button
           type="submit"
           className="button"

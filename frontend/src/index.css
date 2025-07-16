@@ -4,10 +4,17 @@
   --line-height-base: 1.5;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
+  --font-weight-bold: 600;
   --h1-font-size: 3.2em;
   --h1-line-height: 1.1;
   --h2-font-size: 2em;
   --h2-line-height: .9;
+
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
 
 
   /* Color Palette */
@@ -24,10 +31,15 @@
   --color-button-bg: rgba(255, 255, 255, 0.87);
   --color-button-border-hover: #646cff;
   --color-placeholder: rgba(255, 255, 255, 0.553);
+  --color-box-shadow: rgba(0, 0, 0, 0.1);
 
   /* Spacing */
   --spacing-xs: 0.5rem;
   --spacing-sm: 0.75rem;
+  --spacing-md: 1.2rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 2.5rem;
+  --spacing-2xl: 3rem;
   --spacing-md-v: 1.2em;
   --spacing-md-h: 0.5em;
   --spacing-lg-v: 2em;
@@ -46,6 +58,8 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
@@ -162,28 +176,15 @@ h2 {
   font-weight: var(--font-weight-normal);
 }
 
-/* Margin utility */
-.mb-0 {
-  margin-bottom: 0;
+
+.separator {
+  height: 2px;
+  background-color: var(--color-text-primary);
 }
 
-/* Layout utility */
-.flex {
-  display: flex;
-}
 
-.flex-col {
-  flex-direction: column;
-}
 
-.flex-row {
-  flex-direction: row;
-}
-
-.row-gap-4 {
-  row-gap: .4rem;
-}
-
-.row-gap-5 {
-  row-gap: .5rem;
+.icon {
+  height: var(--text-2xl);
+  cursor: pointer;
 }
