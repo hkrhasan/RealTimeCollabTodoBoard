@@ -1,5 +1,4 @@
-import { FilterQuery } from "mongoose";
-import { IUser, UserModel } from "../models/user";
+import { IUser, UserModel } from "../models";
 import { User } from "../schemas/user.schema";
 import { BaseRepository } from "./base.repository";
 

@@ -2,7 +2,7 @@ import type React from "react";
 import KanbanTask from "./KanbanTask";
 import type { Column, Task } from "../../type";
 import ScrollableArea from "../ScrollableArea";
-import AddTodo from "../AddTodo";
+import AddTask from "../AddTask";
 
 
 
@@ -30,12 +30,12 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         <h2 className="kanban-column-title">{column.title}</h2>
         <span className="task-count">({column.tasks.length})</span>
       </div>
-      <AddTodo />
+      <AddTask columnId={column._id} />
     </div>
     <ScrollableArea offset={30}>
       <div className="kanban-column-content">
 
-        {column.tasks.map((task, index) => <div key={task.id} className="task-wrapper" style={{ "--task-index": index } as React.CSSProperties}>
+        {column.tasks.map((task, index) => <div key={task._id} className="task-wrapper" style={{ "--task-index": index } as React.CSSProperties}>
           <KanbanTask
             task={task}
             onDragStart={(e) => taskDragStart(e, task)}

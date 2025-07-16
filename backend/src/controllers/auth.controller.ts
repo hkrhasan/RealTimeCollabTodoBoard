@@ -19,9 +19,10 @@ export default class AuthController extends BaseController {
       const { accessToken, refreshToken } = await authService.signTokens({
         email: user.email,
         sub: user._id.toString(),
+        username: user.username,
       })
 
-      this.httpContext.response.json({ accessToken, refreshToken, username: user.username })
+      this.httpContext.response.status(200).json({ accessToken, refreshToken, username: user.username, _id: user._id })
     } catch (error) {
       console.error(error);
       let message = "something went wrong";

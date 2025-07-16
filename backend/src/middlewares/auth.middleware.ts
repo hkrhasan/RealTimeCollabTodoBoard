@@ -35,3 +35,11 @@ declare global {
     }
   }
 }
+
+declare global {
+  namespace Socket {
+    interface SocketData {
+      user: JWTPayload;
+    }
+  }
+}

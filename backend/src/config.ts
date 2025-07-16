@@ -8,7 +8,7 @@ const config = {
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
   mongoUri: process.env.MONGO_URI || '',
   JWTSecret: process.env.JWT_SECRET || 'super-secret-key',
-  accessExpire: '15m',
+  accessExpire: '7d', // for testing perpose only  
   refreshExpire: '7d'
 };
 

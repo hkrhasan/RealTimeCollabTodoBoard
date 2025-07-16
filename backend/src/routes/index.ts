@@ -1,6 +1,7 @@
 import { Application, Request, Response } from 'express';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
+import { authenticate } from '../middlewares/auth.middleware';
 
 export const registerRoutes = (app: Application) => {
   app.use('/auth', authRoutes);

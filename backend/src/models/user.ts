@@ -19,6 +19,12 @@ const userSchema = new Schema<IUser>({
 }, {
   timestamps: true,
   versionKey: false,
+  toJSON: {
+    transform(doc, ret) {
+      const { password, rtHash, ...rest } = ret;
+      return rest;
+    }
+  }
 });
 
 
@@ -48,6 +54,7 @@ userSchema.pre(['updateOne', 'findOneAndUpdate'], async function (next) {
     next(error as Error);
   }
 })
+
 
 userSchema.methods.comparePassword = async function (
   candidatePassword: string

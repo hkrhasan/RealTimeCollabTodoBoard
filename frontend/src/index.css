@@ -161,6 +161,27 @@ h2 {
   opacity: 0.7;
 }
 
+/* Hide default arrow */
+.input[type="select"], .input select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  background-color: #fff;
+  padding-right: 2.5rem; /* space for chevron */
+  position: relative;
+}
+
+/* Custom chevron icon */
+.input select {
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.25rem center; /* increased gap */
+  background-size: 1.25rem 1.25rem;
+  cursor: pointer;
+}
+
+
 ::placeholder {
   color: var(--color-placeholder);
   opacity: 1; /* Firefox */

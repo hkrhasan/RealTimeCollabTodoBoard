@@ -4,6 +4,7 @@ import { Tabs } from "../../components/Tabs";
 import { TabsContent } from "../../components/Tabs/TabsContent";
 import { TabsList } from "../../components/Tabs/TabsList";
 import { TabsTrigger } from "../../components/Tabs/TabsTrigger";
+import { SocketProvider } from "../../contexts/SocketContext";
 import "./Dashboard.css"
 
 function DashboardPage() {
@@ -18,7 +19,9 @@ function DashboardPage() {
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
         <TabsContent value="board">
-          <KanbanBoard />
+          <SocketProvider boardId={import.meta.env.VITE_DEFAULT_BOARD_ID}>
+            <KanbanBoard />
+          </SocketProvider>
         </TabsContent>
         <TabsContent value="activity">
           <div className="">

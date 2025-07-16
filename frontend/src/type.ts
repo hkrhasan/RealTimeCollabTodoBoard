@@ -1,18 +1,31 @@
+import type { IUser } from "./contexts/AuthContext";
 
+export type CreateTask = Omit<Task, '_id' | 'assignedTo' | 'createdAt'>
+
+export type Board = {
+  _id: string;
+  title: string;
+  columns: Column[];
+}
+
+export type Priority = "low" | "medium" | "high";
 
 export type Task = {
-  id: string;
+  _id: string;
   title: string;
   description: string;
-  assignedTo: string | null;
-  priority: "low" | "medium" | "high";
+  assignedTo: IUser | null;
+  priority: Priority;
   createdAt: Date
 }
 
 export type Column = {
-  id: string;
+  _id: string;
   title: string;
   tasks: Task[];
   color: string;
 }
 
+export type ErrorResponse = {
+  error?: string;
+}

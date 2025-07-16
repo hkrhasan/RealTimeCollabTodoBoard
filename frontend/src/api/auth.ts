@@ -1,10 +1,7 @@
 import type { LoginValues } from "../components/LoginForm";
 import type { RegisterValues } from "../components/RegisterForm";
+import type { ErrorResponse } from "../type";
 import api from "./axios";
-
-type ErrorResponse = {
-  error?: string;
-}
 
 export const authAPI = {
   login: (payload: LoginValues) => api.post('/auth/login', payload),

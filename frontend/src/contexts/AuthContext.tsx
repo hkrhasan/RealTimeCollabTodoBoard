@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import type { RegisterValues } from "../components/RegisterForm";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const AUTH_STORE_KEY = 'AUTH_DATA'
+export const AUTH_STORE_KEY = 'AUTH_DATA'
 
 type AuthContextType = {
   user: LoggedInUser | null;
@@ -28,11 +28,16 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: false,
 })
 
+export type IUser = {
+  _id: string;
+  username: string;
+}
+
 export type LoggedInUser = {
   accessToken: string;
   refreshToken: string;
-  username: string;
-}
+} & IUser;
+
 
 type AuthProviderProps = {
   children: React.ReactNode;

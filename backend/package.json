@@ -4,6 +4,7 @@
   "main": "dist/main.js",
   "scripts": {
     "start": "ts-node ./src/main.ts",
+    "seed": "ts-node ./src/seed.ts",
     "start:dev": "./node_modules/nodemon/bin/nodemon.js",
     "start:prod": "npm run build && node ./dist/main.js",
     "build": "npx tsc"

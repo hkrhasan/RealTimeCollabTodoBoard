@@ -16,12 +16,12 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, className = '', onAssign,
       <div className="task-priority" style={{ backgroundColor: getPriorityColor(task.priority) }}>
         {task.priority}
       </div>
-      <div className="task-date">{task.createdAt.toLocaleDateString()}</div>
+      <div className="task-date">{new Date(task.createdAt).toLocaleDateString()}</div>
     </div>
     <h3 className="task-title">{task.title}</h3>
     <p className="task-description">{task.description}</p>
     <div className="task-footer">
-      {task.assignedTo ? <span className="button-link">{task.assignedTo}</span> : <button className="button">Smart Assign</button>}
+      {task.assignedTo ? <span className="button-link">{task.assignedTo.username}</span> : <button className="button">Smart Assign</button>}
 
       <div className="assign-actions">
         <PencilIcon className="icon" />

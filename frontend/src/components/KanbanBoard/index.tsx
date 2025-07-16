@@ -1,22 +1,40 @@
 import type React from "react"
 import './KanbanBoard.css'
-import { useRef, useState } from "react"
-import { initialColumns } from "../../constants"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 import KanbanColumn from "./KanbanColumn"
 import type { Column, Task } from "../../type"
-import AddTodo from "../AddTodo"
 import { Dialog, useDialogState } from "../Dialog"
+import useSocket from "../../hooks/useSocket"
+import { usersAPI } from "../../api/user"
+
+
+type KanbanBoardContextType = {
+}
+
+export const KanbanBoardContext = createContext<KanbanBoardContextType>({})
+
+export const useKanbanBoard = () => useContext(KanbanBoardContext);
 
 type KanbanBoardProps = React.ComponentProps<"div"> & {
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
+  const { isConnected, board, columns, setColumns } = useSocket();
   const [assigningTask, setAssigningTask] = useState<Task | null>(null)
   const assigmentDialogState = useDialogState();
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
   const dragCounter = useRef(0);
+
+  useEffect(() => {
+    initialEffect();
+  }, [board, isConnected])
+
+  const initialEffect = async () => {
+    if (!board) return;
+    // const users = await usersAPI.getUsers();
+
+  }
 
   const handleDragStart = (e: React.DragEvent, task: Task) => {
     setDraggedTask(task)
@@ -34,7 +52,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
     setDragOverColumn(columnId)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (_: React.DragEvent) => {
     dragCounter.current--
     if (dragCounter.current === 0) {
       setDragOverColumn(null)
@@ -49,9 +67,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
     if (!draggedTask) return
 
     // Find source column
-    const sourceColumn = columns.find((col) => col.tasks.some((task) => task.id === draggedTask.id))
+    const sourceColumn = columns.find((col) => col.tasks.some((task) => task._id === draggedTask._id))
 
-    if (!sourceColumn || sourceColumn.id === targetColumnId) {
+    if (!sourceColumn || sourceColumn._id === targetColumnId) {
       setDraggedTask(null)
       return
     }
@@ -59,13 +77,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
     // Update columns
     setColumns((prevColumns) => {
       return prevColumns.map((column) => {
-        if (column.id === sourceColumn.id) {
+        if (column._id === sourceColumn._id) {
           // Remove task from source column
           return {
             ...column,
-            tasks: column.tasks.filter((task) => task.id !== draggedTask.id),
+            tasks: column.tasks.filter((task) => task._id !== draggedTask._id),
           }
-        } else if (column.id === targetColumnId) {
+        } else if (column._id === targetColumnId) {
           // Add task to target column
           return {
             ...column,
@@ -81,31 +99,39 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
 
 
 
-  return <div className={`kanban-board ${className}`}>
-    {columns.map((col) =>
-      <div
-        key={col.id}
-        className="column-wrapper"
-        onDragEnter={(e) => handleDragEnter(e, col.id)} onDragLeave={handleDragLeave}
-      >
-        <KanbanColumn
-          column={col}
-          onDrop={(e) => handleDrop(e, col.id)}
-          onDragOver={handleDragOver}
-          taskDragStart={handleDragStart}
-          isDragOver={dragOverColumn === col.id}
-          onAssign={(_, task) => {
-            setAssigningTask(task)
-            assigmentDialogState.open()
-          }}
-        />
-      </div>)}
-
-    <Dialog isOpen={assigmentDialogState.isOpen} onClose={assigmentDialogState.close} title="Task Assignment" size="sm">
-      <p>this dialog handle ticket assignment</p>
-
-    </Dialog>
+  if (!isConnected) return <div className="">
+    <h1>Socket Disconnected</h1>
   </div>
+
+
+
+  return <KanbanBoardContext.Provider value={{}}>
+    <div className={`kanban-board ${className}`}>
+      {columns.map((col) =>
+        <div
+          key={col._id}
+          className="column-wrapper"
+          onDragEnter={(e) => handleDragEnter(e, col._id)} onDragLeave={handleDragLeave}
+        >
+          <KanbanColumn
+            column={col}
+            onDrop={(e) => handleDrop(e, col._id)}
+            onDragOver={handleDragOver}
+            taskDragStart={handleDragStart}
+            isDragOver={dragOverColumn === col._id}
+            onAssign={(_, task) => {
+              setAssigningTask(task)
+              assigmentDialogState.open()
+            }}
+          />
+        </div>)}
+
+      <Dialog isOpen={assigmentDialogState.isOpen} onClose={assigmentDialogState.close} title="Task Assignment" size="sm">
+        <p>this dialog handle ticket assignment</p>
+
+      </Dialog>
+    </div>
+  </KanbanBoardContext.Provider>
 }
 
 export default KanbanBoard

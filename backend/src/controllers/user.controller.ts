@@ -10,7 +10,7 @@ export default class UserController extends BaseController {
 
       const user = await userRepository.create(dto)
 
-      this.httpContext.response.json({ _id: user._id })
+      this.httpContext.response.status(201).json({ _id: user._id })
     } catch (error) {
       console.error(error);
       let message = "something went wrong";
@@ -26,6 +26,19 @@ export default class UserController extends BaseController {
         message = "Email already in use"
       }
 
+      this.httpContext.response.status(status).json({ error: message });
+
+    }
+  }
+
+  async get() {
+    try {
+      const users = await userRepository.find({});
+      this.httpContext.response.status(200).json(users)
+    } catch (error) {
+      console.error(error);
+      let message = "something went wrong";
+      let status = 500;
       this.httpContext.response.status(status).json({ error: message });
 
     }

@@ -2,6 +2,7 @@
 export interface JWTPayload {
   sub: string;
   email: string;
+  username?: string;
 }
 
 declare global {
