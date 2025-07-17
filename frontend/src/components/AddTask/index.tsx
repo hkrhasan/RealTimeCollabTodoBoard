@@ -8,7 +8,7 @@ import { TextArea } from "../TaxtArea";
 import { InputSelect } from "../InputSelect";
 import { PRIORITIES } from "../../constants";
 import useSocket from "../../hooks/useSocket";
-import type { Priority, Task } from "../../type";
+import type { Priority } from "../../type";
 
 type AddTaskValues = {
   title: string;

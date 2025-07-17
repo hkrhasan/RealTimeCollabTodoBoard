@@ -36,6 +36,13 @@ export const taskUpdateSchema = taskCreateSchema.omit({ createdBy: true, positio
   taskId: ObjectIdSchema,
 });
 
+export const taskSmartAssignSchema = taskCreateSchema.pick({
+  boardId: true,
+  columnId: true,
+}).extend({
+  taskId: ObjectIdSchema,
+})
+
 export const taskDeleteSchema = taskCreateSchema.pick({
   columnId: true,
   boardId: true,
@@ -57,3 +64,4 @@ export type TaskCreateWithoutBoardId = z.infer<typeof taskCreateWithoutBoardIdSc
 export type TaskUpdate = z.infer<typeof taskUpdateSchema>;
 export type TaskDelete = z.infer<typeof taskDeleteSchema>;
 export type TaskMove = z.infer<typeof taskMoveSchema>;
+export type TaskSmartAssign = z.infer<typeof taskSmartAssignSchema>;

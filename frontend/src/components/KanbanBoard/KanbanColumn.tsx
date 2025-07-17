@@ -4,6 +4,7 @@ import type { Column, Task } from "../../type";
 import ScrollableArea from "../ScrollableArea";
 import AddTask from "../AddTask";
 import useSocket from "../../hooks/useSocket";
+import { useKanbanBoard } from ".";
 
 
 
@@ -11,7 +12,6 @@ type KanbanColumnProps = React.ComponentProps<"div"> & {
   column: Column;
   taskDragStart: (e: React.DragEvent, task: Task) => void
   isDragOver: boolean;
-  onAssign: (e: React.MouseEvent, task: Task) => void
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -20,10 +20,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   column,
   isDragOver,
   taskDragStart,
-  onAssign,
   ...props
 }) => {
-  const { deleteTask } = useSocket()
+  useSocket()
+  const { handleEdit } = useKanbanBoard()
   return <div className={`kanban-column ${isDragOver ? "drag-over" : ""} ${className}`} style={{ ...style, ...{ "--column-color": column.color } as React.CSSProperties }} {...props}>
     <div className="kanban-column-header">
       <div className="kanban-column-title-wrapper">
@@ -40,8 +40,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <KanbanTask
             task={task}
             onDragStart={(e) => taskDragStart(e, task)}
-            onAssign={(e) => onAssign(e, task)}
             columnId={column._id}
+            onEdit={(_) => handleEdit(column._id, task)}
           />
         </div>)}
 

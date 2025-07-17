@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import boardRepository from "../repositories/board.repository";
 
+// export const boardWorkloadCache = new Map<string, Map<string, number>>();
 
 const joinBoardHandler = async (socket: Socket, boardId: string, cb: (success: boolean) => void) => {
   try {

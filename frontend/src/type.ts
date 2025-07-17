@@ -1,6 +1,7 @@
 import type { IUser } from "./contexts/AuthContext";
 
 export type CreateTask = Omit<Task, '_id' | 'assignedTo' | 'createdAt'>
+export type UpdateTask = Partial<Omit<Task, '_id' | 'createdAt' | 'createdBy'>>
 
 export type Board = {
   _id: string;
@@ -18,6 +19,10 @@ export type Task = {
   priority: Priority;
   createdAt: Date
   createdBy?: string | null
+}
+
+export type TaskWithColumnId = Task & {
+  columnId: string
 }
 
 export type Column = {

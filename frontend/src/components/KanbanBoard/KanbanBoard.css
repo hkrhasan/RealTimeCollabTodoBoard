@@ -152,3 +152,29 @@
   column-gap: var(--spacing-sm);
   overflow: hidden;
 }
+
+.assign-form {
+  display: grid;
+  row-gap: var(--spacing-md);
+}
+
+@media (max-width: 1200px) {
+  .kanban-board {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+    row-gap: var(--spacing-md);
+  }
+  
+  .kanban-column {
+    padding: var(--spacing-sm);
+  }
+  
+  .task-title {
+    font-size: var(--text-md);
+  }
+}

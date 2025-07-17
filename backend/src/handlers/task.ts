@@ -1,9 +1,12 @@
 import { Socket } from "socket.io"
 import { ITask } from "../models"
-import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelete, taskDeleteSchema, TaskMove, taskMoveSchema, TaskUpdate, taskUpdateSchema } from "../schemas/task.schema"
+import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelete, taskDeleteSchema, TaskMove, taskMoveSchema, TaskSmartAssign, taskSmartAssignSchema, TaskUpdate, taskUpdateSchema } from "../schemas/task.schema"
 import columnRepository from "../repositories/column.repository";
-import { object, ZodError } from "zod";
-import taskRepository from "../repositories/task.repository";
+import { ZodError } from "zod";
+import boardRepository from "../repositories/board.repository";
+import { Action } from "../schemas/action.schema";
+import actionRepository from "../repositories/action.repository";
+import { Types } from "mongoose";
 
 type ErrorCb = (err: string | null) => void;
 
@@ -20,6 +23,7 @@ export const createTaskHandler = async (socket: Socket, payload: TaskCreateWitho
     });
 
     cb(null, createdTask);
+
   } catch (error) {
     console.error(error);
     let message = (error as Error).message
@@ -47,6 +51,10 @@ export const deleteTaskHandler = async (socket: Socket, payload: TaskDelete, cb:
       throw new Error("Unauthorized")
     }
 
+    if (task?.assignedTo) {
+      boardRepository.updateWorkloadCache(boardId, task.assignedTo, -1)
+    }
+
     // remove task
     column.tasks.splice(taskIndex, 1);
     await column.save();
@@ -58,6 +66,7 @@ export const deleteTaskHandler = async (socket: Socket, payload: TaskDelete, cb:
 
 
     cb(null)
+
   } catch (error) {
     console.error(error);
     let message = (error as Error).message
@@ -116,7 +125,10 @@ export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb:
       return
     }
 
-    await columnRepository.updateTask({ ...taskDto, columnId, taskId })
+    await columnRepository.updateTask({ ...taskDto, columnId, taskId }, (assignees) => {
+      if (assignees.new) boardRepository.updateWorkloadCache(boardId, assignees.new, 1)
+      if (assignees.old) boardRepository.updateWorkloadCache(boardId, assignees.old, -1)
+    })
 
     socket.to(boardId).emit('taskUpdated', {
       taskId,
@@ -137,12 +149,81 @@ export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb:
   }
 }
 
-export default function (socket: Socket) {
-  socket.on('createTask', (payload, cb) => createTaskHandler(socket, payload, cb))
+export const assignSmartHandler = async (socket: Socket, payload: TaskSmartAssign, cb: ErrorCb) => {
+  try {
+    const parsedPaylod = taskSmartAssignSchema.parse(payload);
 
-  socket.on('deleteTask', (payload, cb) => deleteTaskHandler(socket, payload, cb)
-  )
+    const optimalUserId = await boardRepository.findOptimalAssignee(parsedPaylod.boardId);
+    console.log("Optimal user :- ", optimalUserId)
 
-  socket.on('moveTask', (payload, cb) => moveTaskHandler(socket, payload, cb))
-  socket.on('updateTask', (payload, cb) => updateTaskHandler(socket, payload, cb))
+    updateTaskHandler(socket, { ...parsedPaylod, assignedTo: optimalUserId }, cb)
+  } catch (error) {
+    console.error("MovedTask error: ", error);
+    let message = (error as Error).message
+
+    if (error instanceof ZodError) {
+      message = JSON.parse(error.message);
+    }
+
+    cb(message)
+  }
 }
+
+
+
+export default function (socket: Socket) {
+  const userId = socket.data.user._id;
+  socket.on('createTask', (payload, cb) => createTaskHandler(socket, payload, (err, task) => {
+    cb(err, task)
+    if (!err && task) {
+      actionRepository.create({
+        type: 'add',
+        who: userId,
+        what: task._id.toString(),
+      })
+    }
+  }))
+  socket.on('deleteTask', (payload, cb) => deleteTaskHandler(socket, payload, (err) => {
+    cb(err);
+    if (!err) {
+      actionRepository.create({
+        type: 'delete',
+        who: userId,
+        what: payload.taskId
+      })
+    }
+  })
+  )
+  socket.on('moveTask', (payload, cb) => moveTaskHandler(socket, payload, (err) => {
+    cb(err);
+    if (!err) {
+      actionRepository.create({
+        type: 'drag-drop',
+        who: userId,
+        what: payload.taskId,
+      })
+    }
+  }))
+  socket.on('updateTask', (payload, cb) => updateTaskHandler(socket, payload, (err) => {
+    cb(err)
+    if (!err) {
+      actionRepository.create({
+        type: 'edit',
+        who: userId,
+        what: payload.taskId,
+      })
+    }
+  }))
+  socket.on('assignSmart', (payload, cb) => assignSmartHandler(socket, payload, (err) => {
+    cb(err)
+    if (!err) {
+      actionRepository.create({
+        type: 'assign',
+        who: userId,
+        what: payload.payload,
+      })
+    }
+  }))
+}
+
+

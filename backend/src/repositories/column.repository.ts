@@ -26,22 +26,26 @@ class ColumnRepository extends BaseRepository<IColumn> {
   }
 
 
-  async updateTask(dto: Omit<TaskUpdate, 'boardId'>) {
+  async updateTask(dto: Omit<TaskUpdate, 'boardId'>, onAssign?: (data: { new: string | null; old: string | null }) => void) {
     const { columnId, taskId, ...updates } = dto;
+    const newAssignee = updates.assignedTo;
 
     const column = await this.model.findById(columnId);
     if (!column) throw new Error('Column not found');
 
     // Type assertion for tasks array
     const tasksArray = column.tasks as unknown as Types.DocumentArray<ITask>;
-    const task = tasksArray.id(taskId);
+    const task = tasksArray.id(taskId) as ITask;
 
     if (!task) throw new Error('Task not found');
-
+    const oldAssignee = task.assignedTo;
     // Apply updates
     Object.assign(task, updates);
+
+
     await column.save();
 
+    if (newAssignee && onAssign) onAssign({ new: newAssignee, old: oldAssignee })
     return task;
   }
 

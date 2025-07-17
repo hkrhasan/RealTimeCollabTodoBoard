@@ -1,3 +1,4 @@
+import ActivityPanel from "../../components/ActivityPanel";
 import Header from "../../components/Header";
 import KanbanBoard from "../../components/KanbanBoard";
 import { Tabs } from "../../components/Tabs";
@@ -24,9 +25,7 @@ function DashboardPage() {
           </SocketProvider>
         </TabsContent>
         <TabsContent value="activity">
-          <div className="">
-            <h1>Activity panel</h1>
-          </div>
+          <ActivityPanel />
         </TabsContent>
       </Tabs>
     </div>

@@ -18,3 +18,7 @@ export const getPriorityColor = (priority: string) => {
       return "#6b7280"
   }
 }
+
+export function notImplemnted() {
+  throw new Error("Not implemented yet...")
+}

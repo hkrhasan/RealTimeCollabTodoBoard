@@ -1,14 +1,15 @@
 import { createContext, useCallback, useEffect, useState } from "react";
 import { io, Socket } from 'socket.io-client';
 import useAuth from "../hooks/useAuth";
-import type { Column, Board, Task, CreateTask } from "../type";
+import type { Column, Board, Task, CreateTask, UpdateTask } from "../type";
 import { toast } from "sonner";
+import { notImplemnted } from "../constants";
+import type { IUser } from "./AuthContext";
+import { usersAPI } from "../api/user";
 
 const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-function notImplemnted() {
-  throw new Error("Not implemented yet...")
-}
+
 
 type SocketContextType = {
   socket: Socket | null;
@@ -18,11 +19,13 @@ type SocketContextType = {
   loading: boolean;
   error: string | null;
   columns: Column[];
+  users: IUser[];
   setColumns: React.Dispatch<React.SetStateAction<Column[]>>;
   createTask: (columnId: string, task: CreateTask, cb: (err: string | null, serverTask: Task) => void) => void;
-  updateTask: (taskId: string, columnId: string, update: Partial<Task>) => void;
+  updateTask: (taskId: string, columnId: string, update: UpdateTask, cb: (err: string | null) => void) => void;
   deleteTask: (taskId: string, columnId: string) => void;
-  moveTask: (taskId: string, fromColumnId: string, toColumnId: string) => void;
+  moveTask: (taskId: string, fromColumnId: string, toColumnId: string, cb?: (err: string | null) => void) => void;
+  smartAssign: (columnId: string, taskId: string, cb?: (err: string | null) => void) => void
 };
 
 export const SocketContext = createContext<SocketContextType>({
@@ -32,11 +35,13 @@ export const SocketContext = createContext<SocketContextType>({
   columns: [],
   loading: false,
   error: null,
+  users: [],
   setColumns: notImplemnted,
   createTask: notImplemnted,
   updateTask: notImplemnted,
   deleteTask: notImplemnted,
-  moveTask: notImplemnted
+  moveTask: notImplemnted,
+  smartAssign: notImplemnted,
 });
 
 export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: string | null }> = ({ children, boardId }) => {
@@ -46,12 +51,17 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
   const [columns, setColumns] = useState<Column[]>([])
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, Task>>({});
+  const [users, setUsers] = useState<IUser[]>([]);
+  const [_, setOptimisticUpdates] = useState<Record<string, Task>>({});
   const authState = useAuth();
 
   // Initialize socket connection
   useEffect(() => {
     if (!authState.user) return;
+
+    usersAPI.getUsers().then(res => {
+      setUsers(res.data || []);
+    });
 
     const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
       reconnectionAttempts: 5,
@@ -128,7 +138,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
 
   // Set up event listeners
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !users.length) return;
 
     const handleTaskCreated = (payload: { columnId: string; task: Task }) => {
       setColumns(prev => prev.map(col =>
@@ -143,12 +153,24 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       columnId: string;
       update: Partial<Task>
     }) => {
+      console.log("receive update task", payload, users)
+      let assignedTo: any = payload?.update?.assignedTo;
+      if (assignedTo) {
+        const user = users.find(u => u._id === assignedTo);
+        if (!user) {
+          toast.error("someting went wrong refresh the page")
+          return;
+        }
+        assignedTo = user;
+      }
+
+
       setColumns(prev => prev.map(col =>
         col._id === payload.columnId
           ? {
             ...col,
             tasks: col.tasks.map(task =>
-              task._id === payload.taskId ? { ...task, ...payload.update } : task
+              task._id === payload.taskId ? { ...task, ...payload.update, ...(assignedTo && { assignedTo }) } : task
             )
           }
           : col
@@ -195,7 +217,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       socket.off('taskDeleted', handleTaskDeleted);
       socket.off('taskMoved', handleTaskMoved);
     };
-  }, [socket]);
+  }, [socket, users]);
 
 
   // Create task with optimistic UI
@@ -250,7 +272,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
   const updateTask = useCallback((
     taskId: string,
     columnId: string,
-    update: Partial<Task>
+    update: UpdateTask,
+    cb: (err: string | null) => void
   ) => {
     if (!boardId || !socket) return;
 
@@ -260,6 +283,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       .find(t => t._id === taskId);
 
     if (!originalTask) return;
+
 
     // Optimistic update
     setColumns(prev => prev.map(col =>
@@ -279,11 +303,17 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       [taskId]: originalTask
     }));
 
+    let assignedTo: any = update.assignedTo;
+    if (assignedTo) {
+      assignedTo = assignedTo._id
+    }
+
     // Emit to server
     socket.emit(
       'updateTask',
-      { boardId, columnId, taskId, update },
+      { boardId, columnId, taskId, ...update, assignedTo },
       (err: string | null) => {
+        cb(err);
         if (err) {
           // Revert optimistic update
           setColumns(prev => prev.map(col =>
@@ -301,6 +331,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       }
     );
   }, [boardId, socket, columns]);
+
+  const smartAssignTask = useCallback((columnId: string, taskId: string, cb?: (err: string | null) => void) => {
+    if (!boardId || !socket) return;
+
+    // Emit to server
+    socket.emit(
+      'assignSmart',
+      { boardId, columnId, taskId },
+      (err: string | null) => {
+        if (cb) cb(err);
+        if (err) {
+          console.error('Assign failed:', err);
+        }
+      }
+    );
+
+  }, [boardId, socket])
 
   // Delete task with optimistic UI
   const deleteTask = useCallback((taskId: string, columnId: string) => {
@@ -353,7 +400,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
   const moveTask = useCallback((
     taskId: string,
     fromColumnId: string,
-    toColumnId: string
+    toColumnId: string,
+    cb?: (err: string | null) => void
   ) => {
     if (!boardId || !socket) return;
 
@@ -391,6 +439,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
         targetColumnId: toColumnId
       },
       (err: string | null) => {
+        if (cb) cb(err)
         if (err) {
           // Revert optimistic update
           setColumns(prev => {
@@ -426,10 +475,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       setColumns,
       loading,
       error,
+      users,
       createTask,
       updateTask,
       deleteTask,
-      moveTask
+      moveTask,
+      smartAssign: smartAssignTask,
     }}>
       {children}
     </SocketContext.Provider>
