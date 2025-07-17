@@ -1,8 +1,8 @@
 import { Socket } from "socket.io"
 import { ITask } from "../models"
-import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelete, taskDeleteSchema, TaskMove, taskMoveSchema } from "../schemas/task.schema"
+import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelete, taskDeleteSchema, TaskMove, taskMoveSchema, TaskUpdate, taskUpdateSchema } from "../schemas/task.schema"
 import columnRepository from "../repositories/column.repository";
-import { ZodError } from "zod";
+import { object, ZodError } from "zod";
 import taskRepository from "../repositories/task.repository";
 
 type ErrorCb = (err: string | null) => void;
@@ -107,6 +107,36 @@ export const moveTaskHandler = async (socket: Socket, payload: TaskMove, cb: Err
   }
 }
 
+export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb: ErrorCb) => {
+  try {
+    const { boardId, columnId, taskId, ...taskDto } = taskUpdateSchema.parse(payload);
+
+    if (!Object.entries(taskDto).length) {
+      cb("there is no updte")
+      return
+    }
+
+    await columnRepository.updateTask({ ...taskDto, columnId, taskId })
+
+    socket.to(boardId).emit('taskUpdated', {
+      taskId,
+      columnId,
+      update: taskDto,
+    })
+
+    cb(null)
+  } catch (error) {
+    console.error("MovedTask error: ", error);
+    let message = (error as Error).message
+
+    if (error instanceof ZodError) {
+      message = JSON.parse(error.message);
+    }
+
+    cb(message)
+  }
+}
+
 export default function (socket: Socket) {
   socket.on('createTask', (payload, cb) => createTaskHandler(socket, payload, cb))
 
@@ -114,4 +144,5 @@ export default function (socket: Socket) {
   )
 
   socket.on('moveTask', (payload, cb) => moveTaskHandler(socket, payload, cb))
+  socket.on('updateTask', (payload, cb) => updateTaskHandler(socket, payload, cb))
 }

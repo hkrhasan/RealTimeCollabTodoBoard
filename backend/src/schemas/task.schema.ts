@@ -27,7 +27,14 @@ export const taskCreateWithoutBoardIdSchema = taskCreateSchema.omit({
   boardId: true,
 })
 
-export const taskUpdateSchema = taskCreateSchema.partial();
+export const taskUpdateSchema = taskCreateSchema.omit({ createdBy: true, position: true }).partial({
+  title: true,
+  description: true,
+  assignedTo: true,
+  priority: true,
+}).extend({
+  taskId: ObjectIdSchema,
+});
 
 export const taskDeleteSchema = taskCreateSchema.pick({
   columnId: true,

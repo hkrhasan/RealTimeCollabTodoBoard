@@ -1,12 +1,14 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { IColumn, ColumnModel, ITask } from "../models";
-import { TaskCreateWithoutBoardId } from "../schemas/task.schema";
+import { TaskCreateWithoutBoardId, TaskUpdate } from "../schemas/task.schema";
 import { BaseRepository } from "./base.repository";
 
 class ColumnRepository extends BaseRepository<IColumn> {
   constructor() {
     super(ColumnModel);
   }
+
+
 
   async addTask(dto: TaskCreateWithoutBoardId): Promise<any> {
     const { columnId, ...task } = dto;
@@ -22,6 +24,27 @@ class ColumnRepository extends BaseRepository<IColumn> {
 
     return taskWithId;
   }
+
+
+  async updateTask(dto: Omit<TaskUpdate, 'boardId'>) {
+    const { columnId, taskId, ...updates } = dto;
+
+    const column = await this.model.findById(columnId);
+    if (!column) throw new Error('Column not found');
+
+    // Type assertion for tasks array
+    const tasksArray = column.tasks as unknown as Types.DocumentArray<ITask>;
+    const task = tasksArray.id(taskId);
+
+    if (!task) throw new Error('Task not found');
+
+    // Apply updates
+    Object.assign(task, updates);
+    await column.save();
+
+    return task;
+  }
+
 
 
   async findColumnAndTaskById(columnId: string, taskId: string) {

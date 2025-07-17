@@ -14,7 +14,7 @@ class BoardRepository extends BaseRepository<IBoard> {
         path: 'tasks',
         populate: {
           path: 'assignedTo',
-          select: 'username',             // only bring back the username
+          select: '_id username',             // only bring back the username
           model: 'User',
         }
       }
