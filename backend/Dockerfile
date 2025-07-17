@@ -36,4 +36,4 @@ ENV PORT=4000
 EXPOSE 4000
 
 # Launch your built server
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/main.js"]
