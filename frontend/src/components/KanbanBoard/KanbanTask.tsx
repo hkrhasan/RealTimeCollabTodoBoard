@@ -2,14 +2,20 @@ import type React from "react";
 import { getPriorityColor } from "../../constants";
 import type { Task } from "../../type";
 import { PencilIcon, TrashIcon, UserPlusIcon } from "@heroicons/react/24/solid";
+import useSocket from "../../hooks/useSocket";
+import useAuth from "../../hooks/useAuth";
 
 
 type KanbanTaskProps = React.ComponentProps<"div"> & {
   task: Task;
   onAssign: (e: React.MouseEvent) => void;
+  columnId: string;
 }
 
-const KanbanTask: React.FC<KanbanTaskProps> = ({ task, className = '', onAssign, ...props }) => {
+const KanbanTask: React.FC<KanbanTaskProps> = ({ task, className = '', onAssign, columnId, ...props }) => {
+  const { deleteTask } = useSocket();
+  const { user } = useAuth();
+
   return <div className={`kanban-task ${className}`} draggable {...props}>
 
     <div className="task-header">
@@ -26,7 +32,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, className = '', onAssign,
       <div className="assign-actions">
         <PencilIcon className="icon" />
         {!task.assignedTo && <UserPlusIcon className="icon" onClick={onAssign} />}
-        <TrashIcon className="icon" />
+        {task.createdBy === user?._id && <TrashIcon className="icon" onClick={() => deleteTask(task._id, columnId)} />}
       </div>
     </div>
   </div>

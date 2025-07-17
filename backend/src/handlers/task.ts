@@ -1,8 +1,11 @@
 import { Socket } from "socket.io"
 import { ITask } from "../models"
-import { taskCreateSchema, TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema } from "../schemas/task.schema"
+import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelete, taskDeleteSchema, TaskMove, taskMoveSchema } from "../schemas/task.schema"
 import columnRepository from "../repositories/column.repository";
 import { ZodError } from "zod";
+import taskRepository from "../repositories/task.repository";
+
+type ErrorCb = (err: string | null) => void;
 
 export const createTaskHandler = async (socket: Socket, payload: TaskCreateWithoutCreatedBy, cb: (err: string | null, task?: ITask) => void) => {
   try {
@@ -34,13 +37,81 @@ export const createTaskHandler = async (socket: Socket, payload: TaskCreateWitho
 }
 
 
+export const deleteTaskHandler = async (socket: Socket, payload: TaskDelete, cb: ErrorCb) => {
+  try {
+    const { taskId, boardId, columnId } = taskDeleteSchema.parse(payload);
+
+    const { column, taskIndex, task } = await columnRepository.findColumnAndTaskById(columnId, taskId);
+
+    if (task?.createdBy?.toString() !== socket.data.user.sub) {
+      throw new Error("Unauthorized")
+    }
+
+    // remove task
+    column.tasks.splice(taskIndex, 1);
+    await column.save();
+
+    socket.to(boardId).emit('taskDeleted', {
+      columnId,
+      taskId,
+    })
+
+
+    cb(null)
+  } catch (error) {
+    console.error(error);
+    let message = (error as Error).message
+
+    if (error instanceof ZodError) {
+      message = JSON.parse(error.message);
+    }
+
+    cb(message)
+  }
+}
+
+
+
+export const moveTaskHandler = async (socket: Socket, payload: TaskMove, cb: ErrorCb) => {
+  try {
+    const { taskId, sourceColumnId, targetColumnId, boardId } = taskMoveSchema.parse(payload);
+
+    // 1. Remove from source column
+    const sourceData = await columnRepository.findColumnAndTaskById(sourceColumnId, taskId);
+    const [task] = sourceData.column.tasks.splice(sourceData.taskIndex, 1);
+    await sourceData.column.save();
+
+    // 2. Add to target column at position
+    const targetColumn = await columnRepository.findById(targetColumnId);
+    if (!targetColumn) throw new Error('Target column not found');
+
+    targetColumn.tasks.push(task as ITask)
+    await targetColumn.save();
+
+    socket.to(boardId).emit('taskMoved', {
+      taskId,
+      sourceColumnId,
+      targetColumnId,
+    })
+
+    cb(null);
+  } catch (error) {
+    console.error("MovedTask error: ", error);
+    let message = (error as Error).message
+
+    if (error instanceof ZodError) {
+      message = JSON.parse(error.message);
+    }
+
+    cb(message)
+  }
+}
 
 export default function (socket: Socket) {
-  socket.on('createTask', (payload, cb) => {
-    createTaskHandler(socket, payload, cb)
-  })
+  socket.on('createTask', (payload, cb) => createTaskHandler(socket, payload, cb))
 
-  socket.on('updateTask', (payload, cb) => {
+  socket.on('deleteTask', (payload, cb) => deleteTaskHandler(socket, payload, cb)
+  )
 
-  })
+  socket.on('moveTask', (payload, cb) => moveTaskHandler(socket, payload, cb))
 }

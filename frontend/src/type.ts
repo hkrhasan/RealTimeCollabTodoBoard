@@ -17,6 +17,7 @@ export type Task = {
   assignedTo: IUser | null;
   priority: Priority;
   createdAt: Date
+  createdBy?: string | null
 }
 
 export type Column = {

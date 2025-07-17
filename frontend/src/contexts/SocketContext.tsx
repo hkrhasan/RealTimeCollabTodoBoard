@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useState } from "react";
 import { io, Socket } from 'socket.io-client';
 import useAuth from "../hooks/useAuth";
 import type { Column, Board, Task, CreateTask } from "../type";
+import { toast } from "sonner";
 
 const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -162,14 +163,37 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       ));
     };
 
+    const handleTaskMoved = (payload: { taskId: string; sourceColumnId: string; targetColumnId: string }) => {
+      setColumns(prev => {
+        const task = prev.flatMap(col => col.tasks).find(t => t._id === payload.taskId)
+        if (!task) return prev;
+
+        // Remove from source column
+        const withoutTask = prev.map(col =>
+          col._id === payload.sourceColumnId
+            ? { ...col, tasks: col.tasks.filter(t => t._id !== payload.taskId) }
+            : col
+        );
+
+        // Add to target column
+        return withoutTask.map(col =>
+          col._id === payload.targetColumnId
+            ? { ...col, tasks: [...col.tasks, task] }
+            : col
+        );
+      });
+    }
+
     socket.on('taskCreated', handleTaskCreated);
     socket.on('taskUpdated', handleTaskUpdated);
     socket.on('taskDeleted', handleTaskDeleted);
+    socket.on('taskMoved', handleTaskMoved);
 
     return () => {
       socket.off('taskCreated', handleTaskCreated);
       socket.off('taskUpdated', handleTaskUpdated);
       socket.off('taskDeleted', handleTaskDeleted);
+      socket.off('taskMoved', handleTaskMoved);
     };
   }, [socket]);
 
@@ -283,9 +307,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
     if (!boardId || !socket) return;
 
     // Save current state for potential revert
-    const originalTask = columns
+    const tasks = columns
       .flatMap(c => c.tasks)
-      .find(t => t._id === taskId);
+    const originalTaskIndex = tasks.findIndex(t => t._id === taskId)
+
+    const originalTask = tasks[originalTaskIndex]
 
     if (!originalTask) return;
 
@@ -309,12 +335,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       (err: string | null) => {
         if (err) {
           // Revert optimistic update
-          setColumns(prev => prev.map(col =>
-            col._id === columnId
-              ? { ...col, tasks: [...col.tasks, originalTask] }
-              : col
+          setColumns(prev => prev.map(col => {
+            if (col._id !== columnId) return col;
+            const tasks = [...col.tasks];
+            tasks.splice(originalTaskIndex, 0, originalTask)
+            return { ...col, tasks }
+          }
           ));
           console.error('Delete failed:', err);
+          toast.error(err)
         }
       }
     );
@@ -354,12 +383,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
 
     // Update on server
     socket.emit(
-      'updateTask',
+      'moveTask',
       {
         boardId,
-        columnId: fromColumnId,
+        sourceColumnId: fromColumnId,
         taskId,
-        update: { columnId: toColumnId }
+        targetColumnId: toColumnId
       },
       (err: string | null) => {
         if (err) {
@@ -384,6 +413,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       }
     );
   }, [boardId, socket, columns]);
+
 
 
   return (

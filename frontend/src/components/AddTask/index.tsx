@@ -38,10 +38,10 @@ const AddTask: FC<AddTaskProps> = ({ columnId, }) => {
     },
     onSubmit: async (values, { setSubmitting, resetForm, setFieldError }) => {
       setSubmitting(true);
-      createTask(columnId, values, (err, task) => {
+      createTask(columnId, values, (err, _) => {
         if (err) {
-          if (err.includes('title')) {
-            setFieldError('title', err);
+          if (err.includes('Duplicate')) {
+            setFieldError('title', 'task already exist');
           }
           setSubmitting(false);
           return;

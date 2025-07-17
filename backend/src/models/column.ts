@@ -28,4 +28,28 @@ const columnSchema = new Schema<IColumn>({
   versionKey: false,
 })
 
+columnSchema.pre("save", function (next) {
+  // Case-insensitive duplicate title check
+  const titleMap = new Map();
+  for (const task of this.tasks) {
+    const normalizedTitle = task.title.trim().toLowerCase();
+
+    if (titleMap.has(normalizedTitle)) {
+      return next(new Error(`Duplicate task title: ${task.title} in the same column`));
+    }
+
+    titleMap.set(normalizedTitle, true);
+  }
+
+  // Position duplicate check
+  // const positions = this.tasks.map(t => t.position);
+  // const uniquePositions = new Set(positions);
+
+  // if (positions.length !== uniquePositions.size) {
+  //   return next(new Error("Duplicate positions in the same column"));
+  // }
+
+  next();
+});
+
 export const ColumnModel = model<IColumn>("Column", columnSchema);

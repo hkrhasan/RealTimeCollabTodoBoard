@@ -7,6 +7,7 @@ export const taskZodSchema = z.object({
   assignedTo: z.union([ObjectIdSchema, z.null()]),
   createdBy: z.union([ObjectIdSchema, z.null()]),
   priority: z.enum(['low', 'medium', 'high']),
+  position: z.number().optional(),
 });
 
 
@@ -15,6 +16,7 @@ export const taskCreateSchema = taskZodSchema.extend({
   boardId: ObjectIdSchema,
 }).partial({
   assignedTo: true,
+  position: true,
 })
 
 export const taskCreateWithoutCreatedBySchema = taskCreateSchema.omit({
@@ -27,8 +29,24 @@ export const taskCreateWithoutBoardIdSchema = taskCreateSchema.omit({
 
 export const taskUpdateSchema = taskCreateSchema.partial();
 
+export const taskDeleteSchema = taskCreateSchema.pick({
+  columnId: true,
+  boardId: true,
+}).extend({
+  taskId: ObjectIdSchema,
+})
+
+export const taskMoveSchema = taskDeleteSchema.omit({
+  columnId: true
+}).extend({
+  sourceColumnId: ObjectIdSchema,
+  targetColumnId: ObjectIdSchema
+})
+
 export type Task = z.infer<typeof taskZodSchema>;
 export type TaskCreate = z.infer<typeof taskCreateSchema>;
 export type TaskCreateWithoutCreatedBy = z.infer<typeof taskCreateWithoutCreatedBySchema>;
 export type TaskCreateWithoutBoardId = z.infer<typeof taskCreateWithoutBoardIdSchema>;
 export type TaskUpdate = z.infer<typeof taskUpdateSchema>;
+export type TaskDelete = z.infer<typeof taskDeleteSchema>;
+export type TaskMove = z.infer<typeof taskMoveSchema>;

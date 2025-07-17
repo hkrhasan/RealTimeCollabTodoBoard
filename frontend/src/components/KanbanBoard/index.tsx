@@ -2,10 +2,9 @@ import type React from "react"
 import './KanbanBoard.css'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import KanbanColumn from "./KanbanColumn"
-import type { Column, Task } from "../../type"
+import type { Task } from "../../type"
 import { Dialog, useDialogState } from "../Dialog"
 import useSocket from "../../hooks/useSocket"
-import { usersAPI } from "../../api/user"
 
 
 type KanbanBoardContextType = {
@@ -19,7 +18,7 @@ type KanbanBoardProps = React.ComponentProps<"div"> & {
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
-  const { isConnected, board, columns, setColumns } = useSocket();
+  const { isConnected, board, columns, setColumns, moveTask } = useSocket();
   const [assigningTask, setAssigningTask] = useState<Task | null>(null)
   const assigmentDialogState = useDialogState();
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
@@ -66,6 +65,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
 
     if (!draggedTask) return
 
+
     // Find source column
     const sourceColumn = columns.find((col) => col.tasks.some((task) => task._id === draggedTask._id))
 
@@ -74,26 +74,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
       return
     }
 
-    // Update columns
-    setColumns((prevColumns) => {
-      return prevColumns.map((column) => {
-        if (column._id === sourceColumn._id) {
-          // Remove task from source column
-          return {
-            ...column,
-            tasks: column.tasks.filter((task) => task._id !== draggedTask._id),
-          }
-        } else if (column._id === targetColumnId) {
-          // Add task to target column
-          return {
-            ...column,
-            tasks: [...column.tasks, draggedTask],
-          }
-        }
-        return column
-      })
-    })
-
+    moveTask(draggedTask._id, sourceColumn._id, targetColumnId)
     setDraggedTask(null)
   }
 

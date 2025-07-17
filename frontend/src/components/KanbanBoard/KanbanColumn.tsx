@@ -3,6 +3,7 @@ import KanbanTask from "./KanbanTask";
 import type { Column, Task } from "../../type";
 import ScrollableArea from "../ScrollableArea";
 import AddTask from "../AddTask";
+import useSocket from "../../hooks/useSocket";
 
 
 
@@ -22,7 +23,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onAssign,
   ...props
 }) => {
-
+  const { deleteTask } = useSocket()
   return <div className={`kanban-column ${isDragOver ? "drag-over" : ""} ${className}`} style={{ ...style, ...{ "--column-color": column.color } as React.CSSProperties }} {...props}>
     <div className="kanban-column-header">
       <div className="kanban-column-title-wrapper">
@@ -40,6 +41,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             task={task}
             onDragStart={(e) => taskDragStart(e, task)}
             onAssign={(e) => onAssign(e, task)}
+            columnId={column._id}
           />
         </div>)}
 
