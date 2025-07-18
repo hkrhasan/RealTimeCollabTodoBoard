@@ -1,6 +1,7 @@
 import ActivityPanel from "../../components/ActivityPanel";
 import Header from "../../components/Header";
 import KanbanBoard from "../../components/KanbanBoard";
+import ScrollableArea from "../../components/ScrollableArea";
 import { Tabs } from "../../components/Tabs";
 import { TabsContent } from "../../components/Tabs/TabsContent";
 import { TabsList } from "../../components/Tabs/TabsList";
@@ -21,7 +22,9 @@ function DashboardPage() {
         </TabsList>
         <TabsContent value="board">
           <SocketProvider boardId={import.meta.env.VITE_DEFAULT_BOARD_ID}>
-            <KanbanBoard />
+            <ScrollableArea>
+              <KanbanBoard />
+            </ScrollableArea>
           </SocketProvider>
         </TabsContent>
         <TabsContent value="activity">

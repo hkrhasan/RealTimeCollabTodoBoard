@@ -1,7 +1,7 @@
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(320px, 400px));
-  column-gap: var(--spacing-lg);
+  gap: var(--spacing-lg);
 }
 
 
