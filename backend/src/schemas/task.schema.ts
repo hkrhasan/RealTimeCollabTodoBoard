@@ -34,6 +34,7 @@ export const taskUpdateSchema = taskCreateSchema.omit({ createdBy: true, positio
   priority: true,
 }).extend({
   taskId: ObjectIdSchema,
+  broadCast: z.boolean().optional(),
 });
 
 export const taskSmartAssignSchema = taskCreateSchema.pick({

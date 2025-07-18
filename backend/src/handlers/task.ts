@@ -4,9 +4,7 @@ import { TaskCreateWithoutCreatedBy, taskCreateWithoutCreatedBySchema, TaskDelet
 import columnRepository from "../repositories/column.repository";
 import { ZodError } from "zod";
 import boardRepository from "../repositories/board.repository";
-import { Action } from "../schemas/action.schema";
 import actionRepository from "../repositories/action.repository";
-import { Types } from "mongoose";
 
 type ErrorCb = (err: string | null) => void;
 
@@ -82,6 +80,7 @@ export const deleteTaskHandler = async (socket: Socket, payload: TaskDelete, cb:
 
 
 export const moveTaskHandler = async (socket: Socket, payload: TaskMove, cb: ErrorCb) => {
+  console.log("Moved Task payload: ", payload)
   try {
     const { taskId, sourceColumnId, targetColumnId, boardId } = taskMoveSchema.parse(payload);
 
@@ -117,8 +116,9 @@ export const moveTaskHandler = async (socket: Socket, payload: TaskMove, cb: Err
 }
 
 export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb: ErrorCb) => {
+  console.log("Update Task payload:- ", payload)
   try {
-    const { boardId, columnId, taskId, ...taskDto } = taskUpdateSchema.parse(payload);
+    const { boardId, columnId, taskId, broadCast, ...taskDto } = taskUpdateSchema.parse(payload);
 
     if (!Object.entries(taskDto).length) {
       cb("there is no updte")
@@ -130,12 +130,21 @@ export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb:
       if (assignees.old) boardRepository.updateWorkloadCache(boardId, assignees.old, -1)
     })
 
-    socket.to(boardId).emit('taskUpdated', {
+    const returnPayload = {
       taskId,
       columnId,
       update: taskDto,
-    })
+    }
 
+    if (broadCast) {
+      // 1) send to the socket that triggered it
+      socket.emit("taskUpdated", returnPayload);
+      // 2) send to everyone else in the room
+      socket.to(boardId).emit("taskUpdated", returnPayload);
+    } else {
+      // old behavior: everyone except the sender
+      socket.to(boardId).emit("taskUpdated", returnPayload);
+    }
     cb(null)
   } catch (error) {
     console.error("MovedTask error: ", error);
@@ -150,15 +159,17 @@ export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb:
 }
 
 export const assignSmartHandler = async (socket: Socket, payload: TaskSmartAssign, cb: ErrorCb) => {
+  console.log({ payload })
   try {
     const parsedPaylod = taskSmartAssignSchema.parse(payload);
+
 
     const optimalUserId = await boardRepository.findOptimalAssignee(parsedPaylod.boardId);
     console.log("Optimal user :- ", optimalUserId)
 
-    updateTaskHandler(socket, { ...parsedPaylod, assignedTo: optimalUserId }, cb)
+    updateTaskHandler(socket, { ...parsedPaylod, assignedTo: optimalUserId, broadCast: true, }, cb)
   } catch (error) {
-    console.error("MovedTask error: ", error);
+    console.error("AssignTask error: ", error);
     let message = (error as Error).message
 
     if (error instanceof ZodError) {

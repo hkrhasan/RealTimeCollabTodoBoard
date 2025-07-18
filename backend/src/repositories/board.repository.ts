@@ -63,7 +63,7 @@ class BoardRepository extends BaseRepository<IBoard> {
     taskCounts.forEach((count, userId) => {
       if (count < minCount) {
         minCount = count;
-        optimalUserId = userId;
+        optimalUserId = userId.toString();
       }
     });
 
@@ -80,7 +80,7 @@ class BoardRepository extends BaseRepository<IBoard> {
     boardCache.forEach((count, userId) => {
       if (count < minCount) {
         minCount = count;
-        candidateId = userId;
+        candidateId = userId.toString();
       }
     });
 
@@ -92,6 +92,7 @@ class BoardRepository extends BaseRepository<IBoard> {
     const cachedUserId = this.findLeastBusyFromCache(boardId);
     if (cachedUserId) return cachedUserId;
 
+    console.log("Cache miss - calculate workload")
     // 2. Cache miss - calculate workload
     return this.calculateBoardWorkload(boardId);
   }
