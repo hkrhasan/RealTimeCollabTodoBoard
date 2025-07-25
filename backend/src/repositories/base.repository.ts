@@ -3,6 +3,7 @@ import { Model, Document, FilterQuery, UpdateQuery, SortOrder } from 'mongoose';
 import { IRepository } from '../types/repository';
 
 export interface FindOptions {
+  select?: string;
   limit?: number;
   skip?: number;
   sort?: Record<string, SortOrder>;
@@ -35,8 +36,14 @@ export class BaseRepository<T extends Document> implements IRepository<T> {
     return query.exec();
   }
 
-  async findById(id: string): Promise<T | null> {
-    return this.model.findById(id).exec();
+  async findById(id: string, options: FindOptions = {}): Promise<T | null> {
+    let query = this.model.findById(id);
+
+    if (options.select) {
+      query.select(options.select)
+    }
+
+    return query.exec();
   }
 
   async update(id: string, update: UpdateQuery<T>): Promise<T | null> {

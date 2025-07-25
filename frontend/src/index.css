@@ -21,13 +21,16 @@
   --color-text-primary: rgba(255, 255, 255, 0.87);
   --color-text-secondary: rgba(0, 0, 0, 0.87); 
   --color-bg-page: #242424;
+  --color-bg-page-secondary: rgba(249, 193, 129, 0.696);
   --color-bg-input: #4b4a4a;
-  --color-bg-card: #2e2e2e; 
+  --color-bg-card: #2e2e2e;
+  --color-bg-danger: #ff4242;
+  --color-bg-danger-outline: #ff7142;
   --color-bg-input-disabled: rgba(75, 74, 74, 0.38);
   --color-border-default: #9d9a9a;
   --color-border-focus: rgba(161, 157, 243, 0.25);
-  --color-link: #646cff;
-  --color-link-hover: #535bf2;
+  --color-link: rgb(100, 108, 255);
+  --color-link-hover: rgb(83, 91, 242);
   --color-button-bg: rgba(255, 255, 255, 0.87);
   --color-button-border-hover: #646cff;
   --color-placeholder: rgba(255, 255, 255, 0.553);
@@ -116,13 +119,34 @@ h2 {
   transition: opacity var(--transition-medium);
   color: var(--color-text-secondary);
 }
+
+.button.danger {
+  background-color: var(--color-bg-danger);
+}
+
+.button.outline {
+  background-color: none;
+}
+
 .button:hover {
   opacity: .8;
 }
+
+.button:disabled {
+  opacity: .8;
+  cursor: not-allowed;
+}
+
 .button:focus,
 .button:focus-visible {
   box-shadow: 0 0 0 0.3rem var(--color-border-focus);
   outline: 1px auto -webkit-focus-ring-color;
+}
+
+.button.danger:focus,
+.button.danger:focus-visible {
+  box-shadow: 0 0 0 0.3rem var(--color-border-focus);
+   outline: 1px auto var(--color-bg-danger-outline); 
 }
 
 .button-link {

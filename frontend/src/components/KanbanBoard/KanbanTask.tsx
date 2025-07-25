@@ -35,7 +35,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, className = '', columnId,
     <div className="task-footer">
       {task.assignedTo ? <span className="button-link" onClick={() => handleAssign({ ...task, columnId })}>{task.assignedTo.username}</span> : <button className="button" onClick={() => {
         setIsAssigning(true)
-        smartAssign(columnId, task._id, (err) => {
+        smartAssign(columnId, task._id, task.version, (err) => {
           if (err) {
             toast.error(err);
           }

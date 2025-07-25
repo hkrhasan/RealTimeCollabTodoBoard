@@ -15,7 +15,8 @@ export const taskSchema = new Schema<ITask>(
     priority: { type: String, required: true, enum: ['low', 'medium', 'high'], },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User', default: null, },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', default: null, },
-    position: { type: Number, required: false }
+    position: { type: Number, required: false },
+    version: { type: Number, required: true, default: 0 }
   },
   {
     timestamps: true,

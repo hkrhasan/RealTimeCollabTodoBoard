@@ -1,0 +1,174 @@
+
+.conflict-resolution {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--spacing-md);
+}
+
+.conflict-header {
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid;
+}
+
+.conflict-info h4 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xs);
+}
+
+.conflict-info p {
+  font-size: calc(var(--text-base) - 2px);
+  margin-bottom: var(--spacing-sm);
+}
+
+.version-info {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.version-info span {
+  color: var(--color-text-secondary);
+  background-color: var(--color-placeholder);
+  font-size: calc(var(--text-base) - 2px);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.resolution-options {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--spacing-sm);
+}
+
+
+
+.resolution-option label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 12px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: calc(var(--text-base) - 2px);
+  transition: all 0.2s ease;
+}
+
+.resolution-option label:hover {
+  background-color: var(--color-bg-input);
+}
+
+.resolution-option input[type="radio"]:checked + strong {
+  color: var(--color-link);
+}
+
+.merge-interface {
+  background: var(--color-bg-input);
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--spacing-sm);
+}
+
+.merge-interface h5 {
+  font-size: var(--text-md);
+  font-weight:var(--font-weight-bold);
+}
+
+.field-conflict {
+  display: flex;
+  flex-direction: column;
+  row-gap: calc(var(--spacing-xs) - 2px);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid;
+}
+
+.field-conflict:last-child {
+  border-bottom: none;
+}
+
+.field-conflict h6 {
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-bold);
+}
+
+.field-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.field-option {
+  display: grid;
+  flex-direction: column;
+  row-gap: var(--spacing-xs);
+}
+
+.field-option label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  font-size: calc(var(--text-base) - 2px);
+}
+
+.field-preview {
+  background-color: var(--color-bg-card);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+}
+
+.field-preview.local {
+  border-left: 4px solid var(--color-link)
+}
+
+.field-preview.server {
+  border-left: 4px solid var(--color-bg-page-secondary)
+}
+
+
+.conflict-preview {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.conflict-preview h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0 0 12px 0;
+}
+
+.task-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-field {
+  font-size: 13px;
+  color: #374151;
+}
+
+.preview-field strong {
+  color: #166534;
+}
+
+.conflict-actions {
+  display: flex;
+  justify-content: flex-end;
+  column-gap: var(--spacing-md);
+}
+  
+@media (max-width: 768px) {
+
+  .field-options {
+    grid-template-columns: 1fr;
+  }
+
+}
+

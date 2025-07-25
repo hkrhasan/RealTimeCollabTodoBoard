@@ -8,6 +8,7 @@ export const taskZodSchema = z.object({
   createdBy: z.union([ObjectIdSchema, z.null()]),
   priority: z.enum(['low', 'medium', 'high']),
   position: z.number().optional(),
+  version: z.number(),
 });
 
 
@@ -17,6 +18,7 @@ export const taskCreateSchema = taskZodSchema.extend({
 }).partial({
   assignedTo: true,
   position: true,
+  version: true,
 })
 
 export const taskCreateWithoutCreatedBySchema = taskCreateSchema.omit({
@@ -35,6 +37,8 @@ export const taskUpdateSchema = taskCreateSchema.omit({ createdBy: true, positio
 }).extend({
   taskId: ObjectIdSchema,
   broadCast: z.boolean().optional(),
+  overwrite: z.boolean().optional(),
+  version: z.number()
 });
 
 export const taskSmartAssignSchema = taskCreateSchema.pick({
@@ -42,6 +46,7 @@ export const taskSmartAssignSchema = taskCreateSchema.pick({
   columnId: true,
 }).extend({
   taskId: ObjectIdSchema,
+  version: z.number(),
 })
 
 export const taskDeleteSchema = taskCreateSchema.pick({

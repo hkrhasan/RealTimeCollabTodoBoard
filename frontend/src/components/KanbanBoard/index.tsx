@@ -2,12 +2,13 @@ import type React from "react"
 import './KanbanBoard.css'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import KanbanColumn from "./KanbanColumn"
-import type { Task, TaskWithColumnId } from "../../type"
+import type { ConflictedTask, Task, TaskWithColumnId } from "../../type"
 import { useDialogState } from "../Dialog"
 import useSocket from "../../hooks/useSocket"
 import { notImplemnted } from "../../constants"
 import EditTaskForm from "../EditTask"
 import AssignTaskForm from "../AssignTask"
+import { TaskConflictDailog } from "../TaskConflictDailog"
 
 
 type KanbanBoardContextType = {
@@ -26,7 +27,8 @@ type KanbanBoardProps = React.ComponentProps<"div"> & {
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
-  const { isConnected, board, columns, moveTask } = useSocket();
+  const { isConnected, board, columns, moveTask, conflictedTask, setConflictedTask } = useSocket();
+  const [_, setUnResolvedTask] = useState<ConflictedTask[]>([])
   const [assigningTask, setAssigningTask] = useState<TaskWithColumnId | null>(null)
   const assigmentDialogState = useDialogState();
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
@@ -96,10 +98,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
     assigmentDialogState.open()
   }
 
+
   if (!isConnected) return <div className="">
     <h1>Socket Disconnected</h1>
   </div>
-
 
 
   return <KanbanBoardContext.Provider value={{
@@ -129,6 +131,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ className = '' }) => {
       <AssignTaskForm task={assigningTask} onClose={function (): void {
         setAssigningTask(null)
       }} />
+
+      {conflictedTask && <TaskConflictDailog conflictedTask={conflictedTask} open={Boolean(conflictedTask)} onCancel={() => {
+        setUnResolvedTask((prev) => {
+          return [...prev, conflictedTask]
+        })
+        setConflictedTask(null)
+      }} onResolve={function (resolvedTask: TaskWithColumnId): void {
+        if (editTask) setEditTask(resolvedTask);
+        if (assigningTask) setAssigningTask(resolvedTask)
+        setConflictedTask(null)
+      }} />}
+
     </div>
   </KanbanBoardContext.Provider>
 }

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useEffect, useState } from "react";
 import { io, Socket } from 'socket.io-client';
 import useAuth from "../hooks/useAuth";
-import type { Column, Board, Task, CreateTask, UpdateTask } from "../type";
+import type { Column, Board, Task, CreateTask, UpdateTask, ConflictedTask } from "../type";
 import { toast } from "sonner";
 import { notImplemnted } from "../constants";
 import type { IUser } from "./AuthContext";
@@ -21,11 +21,13 @@ type SocketContextType = {
   columns: Column[];
   users: IUser[];
   setColumns: React.Dispatch<React.SetStateAction<Column[]>>;
+  conflictedTask: ConflictedTask | null;
+  setConflictedTask: React.Dispatch<React.SetStateAction<ConflictedTask | null>>
   createTask: (columnId: string, task: CreateTask, cb: (err: string | null, serverTask: Task) => void) => void;
   updateTask: (taskId: string, columnId: string, update: UpdateTask, cb: (err: string | null) => void) => void;
   deleteTask: (taskId: string, columnId: string) => void;
   moveTask: (taskId: string, fromColumnId: string, toColumnId: string, cb?: (err: string | null) => void) => void;
-  smartAssign: (columnId: string, taskId: string, cb?: (err: string | null) => void) => void
+  smartAssign: (columnId: string, taskId: string, version: number, cb?: (err: string | null) => void) => void
 };
 
 export const SocketContext = createContext<SocketContextType>({
@@ -36,6 +38,8 @@ export const SocketContext = createContext<SocketContextType>({
   loading: false,
   error: null,
   users: [],
+  conflictedTask: null,
+  setConflictedTask: notImplemnted,
   setColumns: notImplemnted,
   createTask: notImplemnted,
   updateTask: notImplemnted,
@@ -49,10 +53,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
   const [socket, setSocket] = useState<Socket | null>(null);
   const [board, setBoard] = useState<Board | undefined>(undefined)
   const [columns, setColumns] = useState<Column[]>([])
+  const [conflictedTask, setConflictedTask] = useState<ConflictedTask | null>(null)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<IUser[]>([]);
-  const [_, setOptimisticUpdates] = useState<Record<string, Task>>({});
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, Task>>({});
   const authState = useAuth();
 
   // Initialize socket connection
@@ -138,7 +143,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
 
   // Set up event listeners
   useEffect(() => {
-    if (!socket || !users.length) return;
+    if (!socket || !users.length || !columns) return;
 
     const handleTaskCreated = (payload: { columnId: string; task: Task }) => {
       setColumns(prev => prev.map(col =>
@@ -206,18 +211,42 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       });
     }
 
+    const handleTaskConflict = (payload: Task & { columnId: string; boardId: string }) => {
+      const { columnId, boardId, ...task } = payload;
+      const originalTask = optimisticUpdates[task._id];
+
+      if (!originalTask) return;
+
+      const conflictedFields = Object.keys(originalTask).filter((k) => {
+        if (k === 'version') return false
+        const localValue = originalTask[k as keyof typeof originalTask];
+        const serverValue = task[k as keyof typeof task];
+        return JSON.stringify(localValue) !== JSON.stringify(serverValue)
+      }) || []
+
+      if (!originalTask) return;
+      setConflictedTask({
+        local: originalTask,
+        server: task,
+        columnId,
+        conflictedFields,
+      })
+    }
+
     socket.on('taskCreated', handleTaskCreated);
     socket.on('taskUpdated', handleTaskUpdated);
     socket.on('taskDeleted', handleTaskDeleted);
     socket.on('taskMoved', handleTaskMoved);
+    socket.on('taskConflicted', handleTaskConflict);
 
     return () => {
       socket.off('taskCreated', handleTaskCreated);
       socket.off('taskUpdated', handleTaskUpdated);
       socket.off('taskDeleted', handleTaskDeleted);
       socket.off('taskMoved', handleTaskMoved);
+      socket.off('taskConflicted', handleTaskConflict);
     };
-  }, [socket, users]);
+  }, [socket, users, columns]);
 
 
   // Create task with optimistic UI
@@ -284,14 +313,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
 
     if (!originalTask) return;
 
+    const lastVersion = update.version || originalTask.version;
 
+    console.log("update lastVersion >>", lastVersion)
     // Optimistic update
     setColumns(prev => prev.map(col =>
       col._id === columnId
         ? {
           ...col,
           tasks: col.tasks.map(task =>
-            task._id === taskId ? { ...task, ...update } : task
+            task._id === taskId ? { ...task, ...update, version: lastVersion + 1, overwrite: undefined } : task
           )
         }
         : col
@@ -311,7 +342,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
     // Emit to server
     socket.emit(
       'updateTask',
-      { boardId, columnId, taskId, ...update, assignedTo },
+      { boardId, columnId, taskId, ...update, assignedTo, version: lastVersion },
       (err: string | null) => {
         cb(err);
         if (err) {
@@ -332,13 +363,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
     );
   }, [boardId, socket, columns]);
 
-  const smartAssignTask = useCallback((columnId: string, taskId: string, cb?: (err: string | null) => void) => {
+  const smartAssignTask = useCallback((columnId: string, taskId: string, version: number, cb?: (err: string | null) => void) => {
     if (!boardId || !socket) return;
 
     // Emit to server
     socket.emit(
       'assignSmart',
-      { boardId, columnId, taskId },
+      { boardId, columnId, taskId, version },
       (err: string | null) => {
         if (cb) cb(err);
         if (err) {
@@ -464,7 +495,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
   }, [boardId, socket, columns]);
 
 
-
   return (
     <SocketContext.Provider value={{
       socket,
@@ -476,6 +506,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode, boardId: stri
       loading,
       error,
       users,
+      conflictedTask,
+      setConflictedTask,
       createTask,
       updateTask,
       deleteTask,

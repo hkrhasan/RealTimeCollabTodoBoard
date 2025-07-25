@@ -28,7 +28,8 @@ export const AssignTaskForm = ({
           assignedTo: {
             _id: values.assignedTo,
             username: user.username
-          }
+          },
+          version: task.version,
         }, (err) => {
           if (!err) onClose()
         })

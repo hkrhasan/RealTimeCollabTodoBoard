@@ -5,6 +5,7 @@ import columnRepository from "../repositories/column.repository";
 import { ZodError } from "zod";
 import boardRepository from "../repositories/board.repository";
 import actionRepository from "../repositories/action.repository";
+import { ConflictError } from "../utils/conflict-error";
 
 type ErrorCb = (err: string | null) => void;
 
@@ -147,8 +148,14 @@ export const updateTaskHandler = async (socket: Socket, payload: TaskUpdate, cb:
     }
     cb(null)
   } catch (error) {
-    console.error("MovedTask error: ", error);
+    console.error("Update Task error: ", error);
     let message = (error as Error).message
+
+    if ((error as ConflictError).name === 'ConflictError') {
+      console.log("emiting conflict to client who trigger update")
+      socket.emit('taskConflicted', { ...(error as ConflictError).conflictData, columnId: payload.columnId, boardId: payload.boardId });
+    }
+
 
     if (error instanceof ZodError) {
       message = JSON.parse(error.message);

@@ -1,7 +1,15 @@
 import type { IUser } from "./contexts/AuthContext";
 
 export type CreateTask = Omit<Task, '_id' | 'assignedTo' | 'createdAt'>
-export type UpdateTask = Partial<Omit<Task, '_id' | 'createdAt' | 'createdBy'>>
+export type UpdateTask = Partial<Omit<Task, '_id' | 'createdAt' | 'createdBy'>> & {
+  overwrite?: boolean;
+}
+export type ConflictedTask = {
+  local: Task;
+  server: Task;
+  columnId: string;
+  conflictedFields: string[]
+}
 
 export type Board = {
   _id: string;
@@ -18,7 +26,8 @@ export type Task = {
   assignedTo: IUser | null;
   priority: Priority;
   createdAt: Date
-  createdBy?: string | null
+  createdBy?: string | null;
+  version: number;
 }
 
 export type TaskWithColumnId = Task & {
